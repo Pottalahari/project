@@ -1,0 +1,181 @@
+﻿
+@{
+    ViewBag.Title = "View";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management</title>
+</head>
+<body>
+    <form id="taskForm">
+        <!-- Form Fields -->
+        <label for="taskId">Task Id: </label>
+        <input type="number" id="taskId">
+        <br /><br />
+
+        <label for="title">Title: </label>
+        <input type="text" id="title">
+        <br /><br />
+
+        <label for="description">Description: </label>
+        <input type="text" id="description">
+        <br /><br />
+
+        <label for="date">Due Date: </label>
+        <input type="date" id="date">
+        <br /><br />
+
+        <!-- Dropdown for Priority -->
+        <label for="priority">Priority: </label>
+        <select id="priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </select>
+        <br /><br />
+
+        <!-- Dropdown for Status -->
+        <label for="status">Status: </label>
+        <select id="status">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+        <br /><br />
+
+        <label for="userId">User Id: </label>
+        <input type="number" id="userId">
+        <br /><br />
+
+        <label for="projectId">Project Id: </label>
+        <input type="number" id="projectId">
+        <br /><br />
+
+        <button type="button" onclick="createTask()">Assign Task</button>
+    </form>
+
+    <label id="responseMessage" style="color:rgb(71,223,71)"></label>
+
+    <h2>View All Tasks</h2>
+    <button type="button" onclick="fetchAllTasks()">Get All Tasks</button>
+    <div id="taskList"></div>
+
+    <script>
+        const apiUrl = 'https://localhost:7243/api/Task';  // Task API endpoint
+        const userApiUrl = 'https://localhost:7243/api/User';  // User API endpoint for validation
+
+        // Function to display messages on the page
+        function displayMessage(message, isError = false) {
+            const responseLabel = document.getElementById("responseMessage");
+            responseLabel.style.color = isError ? "red" : "green";
+            responseLabel.textContent = message;
+        }
+
+        // Assign Task function that validates User Id and then creates the task
+        function assignTask() {
+            const userId = document.getElementById("userId").value;
+            if (!userId) {
+                return displayMessage("Please enter User Id to validate", true);
+            }
+
+            // Check if the user exists
+            fetch(`${userApiUrl}/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`User with ID ${userId} not found`);
+                    }
+                    return response.json();
+                })
+                .then(user => {
+                    // If user exists, create the task
+                    createTask();
+                })
+                .catch(error => displayMessage(`Error: ${error.message}`, true));
+        }
+
+        // Create a new task (POST)
+        function createTask() {
+            const data = getFormData();
+
+            // Ensure all required fields are populated
+            if (!data.title || !data.status || !data.priority || !data.description) {
+                return displayMessage("Please fill in all required fields: Title, Status, Priority, and Description", true);
+            }
+
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            // Display detailed validation error messages
+                            const errorMessages = Object.entries(errorData.errors)
+                                .map(([field, errors]) => `${field}: ${errors.join(", ")}`)
+                                .join("\n");
+                            displayMessage(`Validation Errors:\n${errorMessages}`, true);
+                            throw new Error(errorMessages);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    displayMessage('Task assigned successfully');
+                    fetchAllTasks(); // Refresh the task list after assignment
+                })
+                .catch(error => displayMessage(`Error: ${error.message}`, true));
+        }
+
+        // Helper function to get form data in a flat structure
+        function getFormData() {
+            return {
+                taskId: document.getElementById("taskId").value ? parseInt(document.getElementById("taskId").value) : null,
+                title: document.getElementById("title").value.trim(),
+                description: document.getElementById("description").value.trim(),
+                dueDate: document.getElementById("date").value,
+                priority: document.getElementById("priority").value,
+                status: document.getElementById("status").value,
+                userId: parseInt(document.getElementById("userId").value),
+                projectId: parseInt(document.getElementById("projectId").value)
+            };
+        }
+
+        // Function to display tasks in the taskList div
+        function fetchAllTasks() {
+            fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(tasks => displayTasks(tasks))
+                .catch(error => displayMessage(`Error: ${error.message}`, true));
+        }
+
+        // Function to display tasks in the taskList div
+        function displayTasks(tasks) {
+            const taskList = document.getElementById("taskList");
+            taskList.innerHTML = tasks.map(task =>
+                `<p>Id: ${task.taskId}, Title: ${task.title}, Description: ${task.description}, Due Date: ${task.dueDate}, Priority: ${task.priority}, Status: ${task.status}, User Id: ${task.userId}, Project Id: ${task.projectId}</p>`
+            ).join('');
+        }
+    </script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,295 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User API - CRUD Operations</title>
+    @*<style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            background-image: url('https://www.wimi-teamwork.com/static/medias/logiciels-gestion-des-taches-1280x640-1.png');
+            background-size: auto;
+            background-repeat: no-repeat;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px 0;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        #responseMessage {
+            display: block;
+            margin-top: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #usersList {
+            max-width: 400px;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+    </style>*@
+</head>
+<body>
+    @*<h1>User API - CRUD Operations</h1>
+
+    <h2>Add or Update User</h2>*@
+    <form id="userForm">
+        <label for="UserId">User ID:</label>
+        <input type="number" id="UserId" name="UserId" required>
+
+        <label for="FirstName">First Name:</label>
+        <input type="text" id="FirstName" name="FirstName" required>
+
+        <label for="LastName">Last Name:</label>
+        <input type="text" id="LastName" name="LastName" required>
+
+        <label for="Email">Email:</label>
+        <input type="text" id="Email" name="Email" required>
+
+        <label for="Password">Password:</label>
+        <input type="text" id="Password" name="Password" required>
+
+        <label for="RoleId">RoleId:</label>
+        <input type="text" id="RoleId" name="RoleId" required>
+
+        <button type="button" onclick="sendRequest('POST')">POST User</button>
+        <button type="button" onclick="updateUser('PUT')">PUT User</button>
+        <button type="button" onclick="deleteUser('DELETE')">DELETE User</button>
+        <button type="button" onclick="getUserById('GET')">GETByID</button>
+    </form>
+
+    <label id="responseMessage"></label>
+
+    <h2>View All Users</h2>
+    <button type="button" onclick="fetchAllUsers()">Get All Users</button>
+
+    <div id="usersList"></div>
+
+    <script>
+        const apiUrl = 'https://localhost:7243/api/User';
+
+        function displayMessage(message, isError = false) {
+            const responseLabel = document.getElementById("responseMessage");
+            responseLabel.style.color = isError ? "red" : "green";
+            responseLabel.textContent = message;
+        }
+
+        function sendRequest(method) {
+            const userId = document.getElementById("UserId").value;
+            const firstName = document.getElementById("FirstName").value;
+            const lastName = document.getElementById("LastName").value;
+            const email = document.getElementById("Email").value;
+            const password = document.getElementById("Password").value;
+            const roleid = document.getElementById("RoleId").value;
+
+            const data = {
+                userId: parseInt(userId),
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password,
+                roleid: roleid
+            };
+
+            fetch(apiUrl, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayMessage(`${method} Success: ${JSON.stringify(data)}`);
+                    fetchAllUsers();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    displayMessage(`Error: ${error.message}`, true);
+                });
+        }
+
+        function deleteUser() {
+            const userId = document.getElementById("UserId").value;
+            if (!userId) {
+                displayMessage("Please enter User ID to delete", true);
+                return;
+            }
+
+            fetch(`${apiUrl}/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    displayMessage(`DELETE Success: User ID ${userId} deleted`);
+                    fetchAllUsers();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    displayMessage(`Error: ${error.message}`, true);
+                });
+        }
+
+        function fetchAllUsers() {
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayUsers(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    displayMessage(`Error: ${error.message}`, true);
+                });
+        }
+
+        function updateUser() {
+            const userId = document.getElementById("UserId").value;
+            const firstName = document.getElementById("FirstName").value;
+            const lastName = document.getElementById("LastName").value;
+            const email = document.getElementById("Email").value;
+            const password = document.getElementById("Password").value;
+
+            const data = {
+                userId: parseInt(userId),
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password
+            };
+
+            fetch(`${apiUrl}/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    return response.text().then(text => text ? JSON.parse(text) : {});
+                })
+                .then(data => {
+                    displayMessage(`PUT Success: ${JSON.stringify(data)}`);
+                    fetchAllUsers();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    displayMessage(`Error: ${error.message}`, true);
+                });
+        }
+
+        function getUserById() {
+            const userId = document.getElementById("UserId").value;
+
+            if (!userId) {
+                displayMessage("Please enter a User ID", true);
+                return;
+            }
+
+            fetch(`${apiUrl}/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayMessage(`GET User Success: ID: ${data.userId}, Name: ${data.firstName} ${data.lastName}, Email: ${data.email}`);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    displayMessage(`Error: ${error.message}`, true);
+                });
+        }
+
+        function displayUsers(users) {
+            const usersList = document.getElementById("usersList");
+            usersList.innerHTML = "<h3>Users:</h3>";
+            usersList.innerHTML += users.map(user => `
+                    <p>ID: ${user.userId}, Name: ${user.firstName} ${user.lastName}, Email: ${user.email}</p>
+                `).join('');
+        }
+    </script>
+</body>
+</html>
+
+
