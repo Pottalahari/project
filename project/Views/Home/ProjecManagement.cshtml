@@ -21,19 +21,20 @@
     <div id="tasksForProject"></div>
 
     <script>
-        const apiUrl = 'https://localhost:7243/api/Task/groupedByProject'; // Base API endpoint
+        const apiUrl = 'https://localhost:7243/api/Task/getByProject'; // Adjust endpoint to match your API
 
+        // Function to fetch tasks by Project ID
         function fetchTasksByProjectId() {
             const projectId = document.getElementById("projectId").value.trim();
 
-        
+            // Validate input
             if (!projectId) {
                 document.getElementById("tasksForProject").innerHTML =
                     `<p style="color: red;">Please enter a valid Project ID.</p>`;
                 return;
             }
 
-            const fetchUrl = `${apiUrl}/getByProject/${projectId}`;
+            const fetchUrl = `${apiUrl}/${projectId}`; // Construct URL with project ID
 
             fetch(fetchUrl)
                 .then(response => {
@@ -52,6 +53,7 @@
                 });
         }
 
+        // Function to display tasks on the page
         function displayTasksForProject(tasks, projectId) {
             const tasksDiv = document.getElementById("tasksForProject");
             tasksDiv.innerHTML = "";
@@ -69,18 +71,19 @@
             tasks.forEach(task => {
                 const taskItem = document.createElement("li");
                 taskItem.textContent = `
-                        Task ID: ${task.TaskId},
-                        Title: ${task.Title},
-                        Description: ${task.Description},
-                        Due Date: ${task.DueDate},
-                        Priority: ${task.Priority},
-                        Status: ${task.Status}
-                    `;
+            Task ID: ${task.taskId},
+            Title: ${task.title},
+            Description: ${task.description},
+            Due Date: ${task.dueDate},
+            Priority: ${task.priority},
+            Status: ${task.status}
+        `;
                 taskList.appendChild(taskItem);
             });
 
             tasksDiv.appendChild(taskList);
         }
+
     </script>
 </body>
 </html>
